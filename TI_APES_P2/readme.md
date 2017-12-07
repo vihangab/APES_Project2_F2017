@@ -1,3 +1,1 @@
-# Tiva TM4C1294 Launchpad FreeRTOS Demo #
-
-This firmw
+# APES Project 2 TIVA C series EK-TM4C1294Cl Codes #
