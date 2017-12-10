@@ -24,9 +24,9 @@
 #include "timers.h"
 #include "semphr.h"
 #include <tmp102.h>
+#include <lsm6ds3.h>
 
-
-#define MAXLEN 500
+#define MAXLEN 100
 #define QLEN 10
 
 struct logdata
@@ -119,11 +119,11 @@ int main(void)
     xlogQ_mutex = xSemaphoreCreateMutex();
 
   // Create tasks
-    xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",1024, NULL, 1, NULL);
 
-    xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, NULL);
 
-    xTaskCreate(loggerTask, (const portCHAR *)"Logger",configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+    xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
 
   UARTprintf("\r\ntemp pedo logger tasks created\r\n");
 
@@ -137,13 +137,11 @@ int main(void)
 // Task to receive data from the temperature sensor
 void temperatureTask(void *pvParameters)
 {
-
     setupTMP102();
     double temp;
+    struct logdata temp_msg;
     for(;;)
     {
-
-
        //wait for a signal
        if(xSemaphoreTake(temp_task,portMAX_DELAY) == pdTRUE)
        {
@@ -152,13 +150,8 @@ void temperatureTask(void *pvParameters)
            {
               UARTprintf("\r\nTemp Task received signal\r\n");
               readTMP102(&temp);
-              struct logdata temp_msg;
-              //int temp1 = (int)temp;
-              //memset(&temp_msg.logdata,0,MAXLEN);
-              temp_msg.msgID = (int)temp;
-              //sprintf(temp_msg.logdata,"temp task data = %d",temp1);
-              strcpy(temp_msg.logdata,"test msg from temp task");
-              UARTprintf("\r\nTemp=  %d\r\n",(int)temp);
+              temp_msg.msgID = TEMP_TASK;
+              sprintf(temp_msg.logdata,"Temperature value is - %f",temp);
               time_t a = time(NULL);
               temp_msg.currtime = ctime(&a);
               if(xQueueSendToBack(xlogQ,&temp_msg,10) != pdPASS )
@@ -168,6 +161,7 @@ void temperatureTask(void *pvParameters)
              UARTprintf("\r\nTemp task completed\r\n");
            }
            xSemaphoreGive(xlogQ_mutex);
+           memset(&temp_msg,(int)'\0',sizeof(temp_msg));
        }
        //vTaskDelay(2000);
     }
@@ -178,7 +172,11 @@ void temperatureTask(void *pvParameters)
 // Task to receive foot step count from the sensor
 void pedometerTask(void *pvParameters)
 {
-
+    uint16_t steps;
+    struct logdata pedo_msg;
+    setupLSM6DS3();
+    char val[10];
+    //UARTprintf("Step count - %d\n",steps);
     for(;;)
     {
         //wait for a signal
@@ -188,9 +186,9 @@ void pedometerTask(void *pvParameters)
 
               if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
               {
-                  UARTprintf("\r\nPedo Task received signal\r\n");
-                   struct logdata pedo_msg;
-                   strcpy(pedo_msg.logdata,"test msg from pedo task");
+                   UARTprintf("\r\nPedo Task received signal\r\n");
+                   readStepCount(&steps);
+                   sprintf(pedo_msg.logdata,"Step count - %d",steps);
                    time_t a = time(NULL);
                    pedo_msg.currtime = ctime(&a);
                    pedo_msg.msgID = PEDO_TASK;
@@ -201,6 +199,7 @@ void pedometerTask(void *pvParameters)
                    //UARTprintf("\r\nPedo task completed\r\n");
               }
               xSemaphoreGive(xlogQ_mutex);
+              memset(&pedo_msg,(int)'\0',sizeof(pedo_msg));
           }
 
        //vTaskDelay(2000);
