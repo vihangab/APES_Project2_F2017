@@ -15,7 +15,6 @@
 
 #define SERVER_IP   ("127.0.0.1")
 #define SERVER_PORT (6001)
-#define BUFFER_SIZE (50)
 
 
 void *SocketThread(void * input){
@@ -25,7 +24,7 @@ void *SocketThread(void * input){
   uint32_t bytes_sent;
   uint32_t bytes_received;
   struct sockaddr_in remoteAddr;
-  char command[BUFFER_SIZE] = {(int)'\0'};
+  char command[MAX_SEND_BUFFER] = {(int)'\0'};
 
   LogMsg *logmsg2;
 
@@ -47,36 +46,54 @@ void *SocketThread(void * input){
   }else{
     printf("Connected to server\n");
   }
-
   if(create_log_struct(&logmsg2)!=DONE){
 		printf("%s\n","Error creating struct");
 	}else{
     /* Receive data */
     while(1){
-      bytes_received = recv(socket_fd,command,BUFFER_SIZE,0);
+      //bytes_received = recv(socket_fd,command,MAX_SEND_BUFFER,0);
+      bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);
       if(bytes_received <= 0){
+        perror("[SocketThread] Receiving data over socket");
         break;
+      }else{
+        /* Send to Logger Task */
+        //pthread_mutex_lock(&logQ_mutex);
+
+        /*if ((bytes_sent = mq_send (logger_queue_handle,(const char*)command, strlen(command), 1)) != 0) //can be changed later to light queue handle
+  			{
+  				perror ("[SocketThread] Sending:");
+  			}
+        */
+        /*printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
+        printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
+        printf ("[SocketThread] Payload: %s \n\n", logmsg2->payload);
+        printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));*/
+
+        if(logmsg2->requestID == LOG_DATA){
+          if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
+    			{
+    				perror ("[SocketThread] Sending Log");
+    			}
+        }
+        //pthread_mutex_unlock(&logQ_mutex);
+
+        /* Send to Decision Task */
+        //pthread_mutex_lock(&decisionQ_mutex);
+        if(logmsg2->requestID == DECIDE){
+          if ((bytes_sent = mq_send (decision_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
+    			{
+    				perror ("[SocketThread] Sending Decision");
+    			}
+        }
+        //pthread_mutex_unlock(&decisionQ_mutex);
+
+        //memset(command,(int)'\0',MAX_SEND_BUFFER);
+        //memset(logmsg2,(int)'\0',sizeof(LogMsg));
       }
-      printf("Data received on socket- %s\n", command);
-      //recv(socket_fd,logmsg2,sizeof(LogMsg),0);
-      pthread_mutex_lock(&logQ_mutex);
-
-      if ((bytes_sent = mq_send (logger_queue_handle,(const char*)command, strlen(command), 1)) != 0) //can be changed later to light queue handle
-			{
-				perror ("[SocketThread] Sending:");
-			}
-      memset(command,(int)'\0',BUFFER_SIZE);
-      /*
-
-      if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
-			{
-				perror ("[LoggerThread] Sending:");
-			}*/
-      pthread_mutex_unlock(&logQ_mutex);
-
-      memset(logmsg2,(int)'\0',sizeof(LogMsg));
     }
   }
   /*Close*/
   close(socket_fd);
-  pthread_ex
+  pthread_exit(NULL);
+}

@@ -21,7 +21,7 @@
 #define ANSI_COLOR_CYAN    ("\x1b[36m")
 #define ANSI_COLOR_RESET   ("\x1b[0m")
 
-static char *taskNames[]={"MainThread","TempThread","LightThread","LoggerThread"};
+static char *taskNames[]={"MainThread","TempThread","PedometerThread","LoggerThread","DecisionThread"};
 
 typedef enum
 {
@@ -41,23 +41,25 @@ typedef enum loglevel
 }LogLevel;
 
 typedef enum{
-    LOG_DATA,
-    HEARTBEAT,
-    DECIDE,
-    SYSTEM_SHUTDOWN
+  LOG_DATA,
+  HEARTBEAT,
+  DECIDE,
+  SYSTEM_SHUTDOWN
 }reqCmds;
 
 typedef enum{
   MAIN_TASK,
   TEMP_TASK,
-  LIGHT_TASK,
-  LOGGER_TASK
+  PEDO_TASK,
+  LOGGER_TASK,
+  DECISION_TASK
 }Sources;
 
 typedef struct logger
 {
   Sources sourceId;
   reqCmds requestID;
+  double data;
   LogLevel level;
 	time_t timestamp;
 	char payload[100];

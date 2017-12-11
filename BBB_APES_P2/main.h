@@ -24,23 +24,33 @@
 #include "logger.h"
 
 /*Macro definitions */
-#define MAX_SEND_BUFFER 4096
-#define QLog            "/logq"
-#define QMain           "/mainq"
-#define QDecide         "/decisionq"
+#define MAX_SEND_BUFFER        (1024)
+#define TEMPERATURE_THRESHOLD  (28)
+#define QLog                   "/logq"
+#define QMain                  "/mainq"
+#define QDecide                "/decisionq"
 
 /* Function declarations */
 void *SocketThread(void * input);
 void *LoggerThread(void *);
 void *DecisionThread(void *);
+
 void initialize_queue(char * qName, mqd_t *msgHandle);
 
 /*synchronisation variables */
-pthread_mutex_t decisionQ_mutex;
+//pthread_mutex_t decisionQ_mutex;
 pthread_mutex_t logQ_mutex;
 pthread_mutex_t mainQ_mutex;
-
+pthread_mutex_t decisionQ_mutex;
 
 /* Queue Handles */
 mqd_t logger_queue_handle;
-mqd_t decision_queue
+mqd_t decision_queue_handle;
+mqd_t main_queue_handle;
+
+/* Thread ID's */
+pthread_t socketThread;
+pthread_t loggerThread;
+pthread_t decisionThread;
+
+#endif /* MAIN_H_ */
