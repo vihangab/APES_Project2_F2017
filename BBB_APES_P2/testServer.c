@@ -144,7 +144,7 @@ int main(int argc, char **argv)
       logmsg0.timestamp = time(NULL);
       logmsg0.level = INFO;
       logmsg0.data = 29.65;
-      //sprintf(logmsg0.payload,"Temp value is - %f",logmsg0.data);
+      sprintf(logmsg0.payload,"Temp value is - %f",logmsg0.data);
       ret = write(client_socket_fd,&logmsg0,sizeof(LogMsg));
       printf("Bytes sent - %d\n",ret);
 			if(ret < 0)
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 				perror("Failed to read the message from the device.");
 				return errno;
 			}
-      sleep(0.5);
+      sleep(1);
       logmsg0.sourceId = TEMP_TASK;
       logmsg0.requestID = LOG_DATA;
       logmsg0.timestamp = time(NULL);
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 				perror("Failed to read the message from the device.");
 				return errno;
 			}
-      sleep(5);
+      sleep(3);
     }
   }
 }

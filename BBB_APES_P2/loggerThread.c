@@ -35,8 +35,7 @@ void *LoggerThread(void *args)
 					}
 					else
 					{
-						printf("[LoggerThread] Queue %s currently holds %ld messages\n",QLog,attr.mq_curmsgs);
-						mq_getattr(logger_queue_handle, &attr);
+            printf ("[LoggerThread] Out Source ID: %d \n", logmsg1->sourceId);
 						if(logmsg1->requestID == LOG_DATA)
 						{
 							printf("Logging status -%d\n",log_item(logFile,logmsg1) );
@@ -45,8 +44,9 @@ void *LoggerThread(void *args)
 							printf ("[LoggerThread] Payload: %s \n\n", logmsg1->payload);
 							printf ("[LoggerThread] Timestamp: %s \n", ctime(&logmsg1->timestamp));
 					  }// Clear buffer
-
-					}
+            mq_getattr(logger_queue_handle, &attr);
+            printf("[LoggerThread] Queue %s currently holds %ld messages\n",QLog,attr.mq_curmsgs);
+        	}
 					//pthread_mutex_unlock(&logQ_mutex);
           memset(logmsg1,(int)'\0',sizeof(LogMsg));
 				}

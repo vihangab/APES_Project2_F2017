@@ -14,7 +14,7 @@ void *DecisionThread(void *args)
 {
   uint32_t msgPriority;
   LogMsg *logmsg0;
-  LogMsg logmsg00;
+  //LogMsg logmsg00;
   uint32_t bytes_read,bytes_sent;
   //char command[MAX_SEND_BUFFER] = {(int)'\0'};
   //printf("Log file create status - %d,\n", create_log_file(&logFile, "dataLog"));
@@ -45,15 +45,15 @@ void *DecisionThread(void *args)
 						{
               if(logmsg0->sourceId == TEMP_TASK){
                 if(logmsg0->data>TEMPERATURE_THRESHOLD){ // If value greater than threshold then send send error log
-                  memset(&logmsg00,(int)'\0',sizeof(LogMsg));
-                  logmsg00.sourceId = DECISION_TASK;
-                  logmsg00.requestID = LOG_DATA;
-                  logmsg00.level = ALERT;
-                  logmsg00.timestamp = time(NULL);
-                  sprintf(logmsg00.payload,"Body temperture %.2f higher than normal",logmsg0->data);
-                  printf("%s\n", logmsg00.payload);
+                  //memset(&logmsg00,(int)'\0',sizeof(LogMsg));
+                  logmsg0->sourceId = DECISION_TASK;
+                  logmsg0->requestID = LOG_DATA;
+                  logmsg0->level = ALERT;
+                  logmsg0->timestamp = time(NULL);
+                  sprintf(logmsg0->payload,"Body temperture %.2f higher than normal",logmsg0->data);
+                  //printf("%s\n", logmsg00.payload);
                   //pthread_mutex_lock(&logQ_mutex);
-                  if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg00, sizeof(LogMsg), 1)) != 0)
+                  if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg0, sizeof(LogMsg), 1)) != 0)
                   {
                     perror ("[DecisionThread] Sending Decision");
                   }
@@ -66,7 +66,7 @@ void *DecisionThread(void *args)
 
 					}
 					//pthread_mutex_unlock(&decisionQ_mutex);
-          memset(logmsg0,(int)'\0',sizeof(LogMsg));
+          //memset(logmsg0,(int)'\0',sizeof(LogMsg));
 				}
     }
   }

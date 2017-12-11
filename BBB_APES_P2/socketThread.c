@@ -81,6 +81,7 @@ void *SocketThread(void * input){
         /* Send to Decision Task */
         //pthread_mutex_lock(&decisionQ_mutex);
         if(logmsg2->requestID == DECIDE){
+          sleep(0.5);
           if ((bytes_sent = mq_send (decision_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
     			{
     				perror ("[SocketThread] Sending Decision");
