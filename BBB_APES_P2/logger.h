@@ -41,11 +41,6 @@ typedef enum loglevel
 }LogLevel;
 
 typedef enum{
-    GET_TEMP_C,
-    GET_TEMP_K,
-    GET_TEMP_F,
-    GET_LUX,
-    GET_LIGHT_STATE,
     LOG_DATA,
     HEARTBEAT,
     DECIDE,

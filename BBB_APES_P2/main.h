@@ -25,12 +25,22 @@
 
 /*Macro definitions */
 #define MAX_SEND_BUFFER 4096
+#define QLog            "/logq"
+#define QMain           "/mainq"
+#define QDecide         "/decisionq"
 
 /* Function declarations */
 void *SocketThread(void * input);
 void *LoggerThread(void *);
+void *DecisionThread(void *);
+void initialize_queue(char * qName, mqd_t *msgHandle);
 
-pthread_t socketThread;
-pthread_t loggerThread;
+/*synchronisation variables */
+pthread_mutex_t decisionQ_mutex;
+pthread_mutex_t logQ_mutex;
+pthread_mutex_t mainQ_mutex;
 
-#endif /* MAIN_H_ */
+
+/* Queue Handles */
+mqd_t logger_queue_handle;
+mqd_t decision_queue

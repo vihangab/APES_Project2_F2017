@@ -1,9 +1,9 @@
-CC= gcc
+CC=gcc
 #arm-linux-gnueabihf-gcc
 CFLAGS= -g -O0 -pthread
 LFLAGS= -lm -lrt
 
-SSRCS= main.c gpio.c socketThread.c loggerThread.c logger.c
+SSRCS= main.c gpio.c socketThread.c loggerThread.c logger.c initialise_queue.c
 #headers=i2c_lib.h apds9301.h
 
 PROGRAMS=p2
