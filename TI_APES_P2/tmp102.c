@@ -32,7 +32,7 @@ void setupTMP102(){
 
     /* Enable and initialize I2C0 Master module
      * data transfer rate 400kbps */
-    I2CMasterInitExpClk(I2C0_BASE, system_clock_rate_hz, true);
+    I2CMasterInitExpClk(I2C0_BASE, g_ui32SysClock, true);
 
     UARTprintf("Temp sensor setup done\n");
 }
@@ -86,7 +86,7 @@ void readTMP102(double *digitalTemp){
           intTemp |= 0xF000;
       }
     }
-    UARTprintf("integer value - %d\n",intTemp);
+    //UARTprintf("integer value - %d\n",intTemp);
 
     *digitalTemp = 0.0625*intTemp;
 

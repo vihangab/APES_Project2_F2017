@@ -15,8 +15,8 @@
 #define TMP_SENSOR_ADDR      (0x48)
 
 /* Peripheral addresses */
-#define GPIO_PORTB_BASE      (0x40005000)  // GPIO Port B
-#define I2C0_BASE            (0x40020000)  // I2C0
+//#define GPIO_PORTB_BASE      (0x40005000)  // GPIO Port B
+//#define I2C0_BASE            (0x40020000)  // I2C0
 
 //P1,P0 bit in Pointer Register of TMP 102 to select registers
 #define SELECT_TEMP          (0x00)

@@ -75,6 +75,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#define SYSTICKHZ               100
+#define SYSTICKMS               (1000 / SYSTICKHZ)
+
 #ifndef __TI_VFP_SUPPORT__
 	#error This port can only be used when the project options are configured to enable hardware floating point support.
 #endif
@@ -377,6 +380,7 @@ void xPortSysTickHandler( void )
 	executes all interrupts must be unmasked.  There is therefore no need to
 	save and then restore the interrupt mask value as its value is already
 	known. */
+
 	( void ) portSET_INTERRUPT_MASK_FROM_ISR();
 	{
 		/* Increment the RTOS tick. */
@@ -388,6 +392,10 @@ void xPortSysTickHandler( void )
 		}
 	}
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( 0 );
+    //
+    // Call the lwIP timer handler.
+    //
+    lwIPTimer(10);
 }
 /*-----------------------------------------------------------*/
 

@@ -1643,8 +1643,7 @@ ADCReferenceSet(uint32_t ui32Base, uint32_t ui32Ref)
     // Check the arguments.
     //
     ASSERT((ui32Base == ADC0_BASE) || (ui32Base == ADC1_BASE));
-    ASSERT((ui32Ref == ADC_REF_INT) || (ui32Ref == ADC_REF_EXT_3V) ||
-           (ui32Ref == ADC_REF_EXT_1V));
+    ASSERT((ui32Ref == ADC_REF_INT) || (ui32Ref == ADC_REF_EXT_3V) || (ui32Ref == ADC_REF_EXT_1V));
 
     //
     // Set the reference.

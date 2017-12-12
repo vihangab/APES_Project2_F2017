@@ -24,7 +24,8 @@
 
 #include <stdint.h>
 #include "FreeRTOS.h"
-
+#include "inc/hw_nvic.h"
+#include "inc/hw_types.h"
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.
@@ -58,7 +59,8 @@ extern uint32_t __STACK_TOP;
 extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
-
+extern void lwIPEthernetIntHandler(void);
+extern void SysTickIntHandler(void);
 
 //*****************************************************************************
 //
@@ -127,7 +129,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
-    IntDefaultHandler,                      // Ethernet
+    lwIPEthernetIntHandler,                      // Ethernet
     IntDefaultHandler,                      // Hibernate
     IntDefaultHandler,                      // USB0
     IntDefaultHandler,                      // PWM Generator 3

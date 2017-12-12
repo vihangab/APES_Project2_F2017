@@ -29,22 +29,6 @@
 #define MAXLEN 100
 #define QLEN 10
 
-struct logdata
-{
-    uint32_t msgID;
-    char *currtime;
-    char logdata[MAXLEN];
-};
-
-typedef enum
-{
-  MAIN_TASK,
-  TEMP_TASK,
-  PEDO_TASK,
-  LOGGER_TASK
-}Source;
-
-
 //Queue
 QueueHandle_t xlogQ;
 
@@ -57,17 +41,17 @@ xSemaphoreHandle pedo_task = 0;
 xSemaphoreHandle xlogQ_mutex = 0;
 
 
+
 // Demo Task declarations
 void temperatureTask(void *pvParameters);
 void pedometerTask(void *pvParameters);
 void loggerTask(void *pvParameters);
+void socketTask(void *pvParameters);
 void vTimerCallBack(void *);
 
 void vTimerCallBack(void* a)
 {
     xSemaphoreGive(temp_task);
-
-
     xSemaphoreGive(pedo_task);
 }
 
@@ -76,61 +60,75 @@ void vTimerCallBack(void* a)
 // Main function
 int main(void)
 {
-   // Initialize system clock to 120 MHz
-  system_clock_rate_hz = ROM_SysCtlClockFreqSet(
-                            (SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
-                             SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480),
-                            SYSTEM_CLOCK);
-  ASSERT(system_clock_rate_hz == SYSTEM_CLOCK);
+
+  //SysCtlMOSCConfigSet(SYSCTL_MOSC_HIGHFREQ);
+  // Initialize system clock to 120 MHz
+  g_ui32SysClock = MAP_SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ |
+                                                SYSCTL_OSC_MAIN |
+                                                SYSCTL_USE_PLL |
+                                                SYSCTL_CFG_VCO_480), 120000000);
+  ASSERT(g_ui32SysClock == SYSTEM_CLOCK);
 
   // Initialize the GPIO pins for the Launchpad
   // Use Ethernet
   PinoutSet(true, false);
 
   // Set up the UART which is connected to the virtual COM port
-   UARTStdioConfig(0, 57600, SYSTEM_CLOCK);
-    //create your queue
-    xlogQ = xQueueCreate(QLEN,sizeof(struct logdata));
+  UARTStdioConfig(0, 115200, SYSTEM_CLOCK);
+  //create your queue
 
-    if(xlogQ == NULL)
-    {
-        UARTprintf("\r\nLogQ creation failed\r\n");
-    }
-    //create timer
-     xtimer = xTimerCreate("Systimer",2000,pdTRUE,(void*)0,vTimerCallBack);
-     if(xtimer == NULL)
-    {
-            UARTprintf("\r\nTimer Creation Failed\r\n");
-    }
-    else
-    {
-        if(xTimerStart(xtimer,0)!=pdPASS)
-        {
-            UARTprintf("\r\nTimer Start Failed\r\n");
-        }
-    }
+
+  xlogQ = xQueueCreate(QLEN,sizeof(LogMsg));
+
+  if(xlogQ == NULL)
+  {
+    UARTprintf("\r\nLogQ creation failed\r\n");
+  }
+  //create timer
+  xtimer = xTimerCreate("Systimer",2000,pdTRUE,(void*)0,vTimerCallBack);
+  if(xtimer == NULL)
+  {
+    UARTprintf("\r\nTimer Creation Failed\r\n");
+  }
+  else
+  {
+    if(xTimerStart(xtimer,0)!=pdPASS)
+      {
+        UARTprintf("\r\nTimer Start Failed\r\n");
+      }
+  }
 
 
 
   //create binary semaphore for signaling
-    vSemaphoreCreateBinary(temp_task);
-    vSemaphoreCreateBinary(pedo_task);
-    //create a mutex for logQ
-    xlogQ_mutex = xSemaphoreCreateMutex();
+  vSemaphoreCreateBinary(temp_task);
+  vSemaphoreCreateBinary(pedo_task);
+  //create a mutex for logQ
+  xlogQ_mutex = xSemaphoreCreateMutex();
 
   // Create tasks
-    xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",1024, NULL, 1, NULL);
+  xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",1024, NULL, 1, NULL);
 
-    xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, NULL);
+  xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, NULL);
 
-    xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
+  xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
+
+  xTaskCreate(socketTask, (const portCHAR *)"Socket",1024, NULL, 1, NULL);
 
   UARTprintf("\r\ntemp pedo logger tasks created\r\n");
 
   UARTprintf("exit main\n");
+
+  //vTaskDelay(5000);
   vTaskStartScheduler();
 
   return 0;
+}
+
+
+void socketTask(void *pvParameters){
+  socketInit();
+  while(1);
 }
 
 
@@ -139,7 +137,7 @@ void temperatureTask(void *pvParameters)
 {
     setupTMP102();
     double temp;
-    struct logdata temp_msg;
+    LogMsg temp_msg;
     for(;;)
     {
        //wait for a signal
@@ -148,20 +146,22 @@ void temperatureTask(void *pvParameters)
 
            if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
            {
-              UARTprintf("\r\nTemp Task received signal\r\n");
+              //UARTprintf("\r\nTemp Task received signal\r\n");
               readTMP102(&temp);
-              temp_msg.msgID = TEMP_TASK;
-              sprintf(temp_msg.logdata,"Temperature value is - %f",temp);
-              time_t a = time(NULL);
-              temp_msg.currtime = ctime(&a);
+              temp_msg.sourceId = TEMP_TASK;
+              temp_msg.requestID = LOG_DATA;
+              temp_msg.data = temp;
+              temp_msg.level = INFO;
+              sprintf(temp_msg.payload,"Temperature value is - %f",temp);
+              temp_msg.timestamp = time(NULL);
               if(xQueueSendToBack(xlogQ,&temp_msg,10) != pdPASS )
               {
                   UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
               }
-             UARTprintf("\r\nTemp task completed\r\n");
+             //UARTprintf("\r\nTemp task completed\r\n");
            }
            xSemaphoreGive(xlogQ_mutex);
-           memset(&temp_msg,(int)'\0',sizeof(temp_msg));
+           memset(&temp_msg,(int)'\0',sizeof(LogMsg));
        }
        //vTaskDelay(2000);
     }
@@ -173,9 +173,8 @@ void temperatureTask(void *pvParameters)
 void pedometerTask(void *pvParameters)
 {
     uint16_t steps;
-    struct logdata pedo_msg;
+    LogMsg pedo_msg;
     setupLSM6DS3();
-    char val[10];
     //UARTprintf("Step count - %d\n",steps);
     for(;;)
     {
@@ -186,12 +185,14 @@ void pedometerTask(void *pvParameters)
 
               if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
               {
-                   UARTprintf("\r\nPedo Task received signal\r\n");
+                   //UARTprintf("\r\nPedo Task received signal\r\n");
                    readStepCount(&steps);
-                   sprintf(pedo_msg.logdata,"Step count - %d",steps);
-                   time_t a = time(NULL);
-                   pedo_msg.currtime = ctime(&a);
-                   pedo_msg.msgID = PEDO_TASK;
+                   pedo_msg.sourceId = PEDO_TASK;
+                   pedo_msg.requestID = LOG_DATA;
+                   pedo_msg.data = steps;
+                   pedo_msg.level = INFO;
+                   sprintf(pedo_msg.payload,"Step count - %d",steps);
+                   pedo_msg.timestamp = time(NULL);
                    if(xQueueSendToBack(xlogQ,&pedo_msg,10) != pdPASS )
                    {
                        UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
@@ -199,7 +200,7 @@ void pedometerTask(void *pvParameters)
                    //UARTprintf("\r\nPedo task completed\r\n");
               }
               xSemaphoreGive(xlogQ_mutex);
-              memset(&pedo_msg,(int)'\0',sizeof(pedo_msg));
+              memset(&pedo_msg,(int)'\0',sizeof(LogMsg));
           }
 
        //vTaskDelay(2000);
@@ -210,24 +211,23 @@ void pedometerTask(void *pvParameters)
 // Task to receive foot step count from the sensor
 void loggerTask(void *pvParameters)
 {
-
+    LogMsg log_msg;
     for(;;)
     {
-       struct logdata log_msg;
        while(uxQueueSpacesAvailable(xlogQ) != QLEN )
        {
             if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
             {
-                    UARTprintf("\r\n Logger task received data\r\n");
+                    //UARTprintf("\r\n Logger task received data\r\n");
                     if(xQueueReceive(xlogQ,&log_msg,portMAX_DELAY) != pdPASS)
                     {
                       UARTprintf("\r\nQueue is empty task blocks for 10 ticks\r\n");
                     }
                     else
                     {
-                      UARTprintf("\r\nMsg ID = %d\r\n",log_msg.msgID);
-                      UARTprintf("\r\nTimestamp = %s\r\n",log_msg.currtime);
-                      UARTprintf("\r\nLog Data = %s\r\n",log_msg.logdata);
+                      //UARTprintf("\r\nMsg ID = %d\r\n",log_msg.sourceId);
+                      //UARTprintf("\r\nTimestamp = %s\r\n",ctime(&log_msg.timestamp));
+                      //UARTprintf("\r\nLog Data = %s\r\n",log_msg.payload);
                     }
             }
             xSemaphoreGive(xlogQ_mutex);

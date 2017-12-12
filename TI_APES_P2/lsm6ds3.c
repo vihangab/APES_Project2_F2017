@@ -29,7 +29,7 @@ void setupI2C2(){
 
     /* Enable and initialize I2C2 Master module
      * data transfer rate 400kbps */
-    I2CMasterInitExpClk(I2C2_BASE, system_clock_rate_hz, true);
+    I2CMasterInitExpClk(I2C2_BASE, g_ui32SysClock, true);
 
     UARTprintf("I2C2 setup");
 }
@@ -123,7 +123,7 @@ void readStepCount(uint16_t *stepCount){
   while(I2CMasterBusy(I2C2_BASE));
   SysCtlDelay(100); // 1us delay
 
-  UARTprintf("Sensor status - %d\n", status);
+  //UARTprintf("Sensor status - %d\n", status);
 
   // Read value from the step counter l register
   I2CMasterSlaveAddrSet(I2C2_BASE, LSM6DS3_SENSOR_ADDR, false);

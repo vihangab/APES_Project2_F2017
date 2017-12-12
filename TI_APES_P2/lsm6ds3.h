@@ -13,8 +13,8 @@
 #define LSM6DS3_SENSOR_ADDR    (0x6B)
 
 /* Peripheral addresses */
-#define GPIO_PORTL_BASE        (0x40062000)  // GPIO Port L
-#define I2C2_BASE              (0x40022000)  // I2C2
+//#define GPIO_PORTL_BASE        (0x40062000)  // GPIO Port L
+//#define I2C2_BASE              (0x40022000)  // I2C2
 
 
 /* Register addresses */

@@ -53,6 +53,8 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/udma.h"
 
+#define UDMA_INT_SW             62
+#define UDMA_INT_ERR            63
 //*****************************************************************************
 //
 //! Enables the uDMA controller for use.
@@ -1095,8 +1097,7 @@ uDMAIntRegister(uint32_t ui32IntChannel, void (*pfnHandler)(void))
     // Check the arguments.
     //
     ASSERT(pfnHandler);
-    ASSERT((ui32IntChannel == UDMA_INT_SW) ||
-           (ui32IntChannel == UDMA_INT_ERR));
+    ASSERT((ui32IntChannel == UDMA_INT_SW) || (ui32IntChannel == UDMA_INT_ERR));
 
     //
     // Register the interrupt handler.
