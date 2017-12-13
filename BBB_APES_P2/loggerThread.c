@@ -6,7 +6,7 @@
 
 #include "main.h"
 #include "logger.h"
-
+#define BUFFER_SIZE 80
 
 struct mq_attr attr;
 FILE *logFile;
@@ -16,7 +16,7 @@ void *LoggerThread(void *args)
   uint32_t msgPriority;
   LogMsg *logmsg1;
   uint32_t bytes_read;
-  //char command[BUFFER_SIZE] = {(int)'\0'};
+  char command[BUFFER_SIZE] = {(int)'\0'};
   printf("Log file create status - %d,\n", create_log_file(&logFile, "dataLog"));
   if(create_log_struct(&logmsg1)!=DONE){
 		printf("%s\n","Error creating struct");
@@ -27,15 +27,15 @@ void *LoggerThread(void *args)
 				{
 					//pthread_mutex_lock(&logQ_mutex);
           //sleep(2);
-					bytes_read = mq_receive(logger_queue_handle, (char *)&logmsg1, sizeof(LogMsg), &msgPriority);
-          //bytes_read = mq_receive(logger_queue_handle, (char *)&command,BUFFER_SIZE , &msgPriority);
+					//bytes_read = mq_receive(logger_queue_handle, (char *)&logmsg1, sizeof(LogMsg), &msgPriority);
+          bytes_read = mq_receive(logger_queue_handle, (char *)&command,BUFFER_SIZE , &msgPriority);
 					if (bytes_read == -1)
 					{
 						perror("[LoggerThread] Failed to recieve:");
 					}
 					else
 					{
-            printf ("[LoggerThread] Out Source ID: %d \n", logmsg1->sourceId);
+            /*printf ("[LoggerThread] Out Source ID: %d \n", logmsg1->sourceId);
 						if(logmsg1->requestID == LOG_DATA)
 						{
 							printf("Logging status -%d\n",log_item(logFile,logmsg1) );
@@ -43,9 +43,11 @@ void *LoggerThread(void *args)
 							printf ("[LoggerThread] Log Level: %d \n", logmsg1->level);
 							printf ("[LoggerThread] Payload: %s \n\n", logmsg1->payload);
 							printf ("[LoggerThread] Timestamp: %s \n", ctime(&logmsg1->timestamp));
-					  }// Clear buffer
-            mq_getattr(logger_queue_handle, &attr);
-            printf("[LoggerThread] Queue %s currently holds %ld messages\n",QLog,attr.mq_curmsgs);
+					  }*/
+		printf("command received = %s",command);				
+		// Clear buffer
+            //mq_getattr(logger_queue_handle, &attr);
+            //printf("[LoggerThread] Queue %s currently holds %ld messages\n",QLog,attr.mq_curmsgs);
         	}
 					//pthread_mutex_unlock(&logQ_mutex);
           memset(logmsg1,(int)'\0',sizeof(LogMsg));

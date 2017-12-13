@@ -13,8 +13,8 @@
 #include <memory.h>
 #include <dirent.h>
 
-#define SERVER_IP   ("127.0.0.1")
-#define SERVER_PORT (6001)
+#define SERVER_IP   ("10.0.0.137")
+#define SERVER_PORT (5000)
 
 
 void *SocketThread(void * input){
@@ -24,7 +24,7 @@ void *SocketThread(void * input){
   uint32_t bytes_sent;
   uint32_t bytes_received;
   struct sockaddr_in remoteAddr;
-  char command[MAX_SEND_BUFFER] = {(int)'\0'};
+  //char command[80] = {(int)'\0'};
 
   LogMsg *logmsg2;
 
@@ -50,47 +50,91 @@ void *SocketThread(void * input){
 		printf("%s\n","Error creating struct");
 	}else{
     /* Receive data */
+
+	/*dummy request */
+	logmsg2->sourceId= LOGGER_TASK;	
+	logmsg2->requestID= LOG_DATA;
+	logmsg2->data = 0.0000;
+	logmsg2->level = INFO;
+	strcpy(logmsg2->payload,"init socket connection from BBG\n");
+	logmsg2->timestamp = time(NULL);
+	
+	/*sending dummy data */
+	printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
+        printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
+        printf ("[SocketThread] Payload: %s \n\n", logmsg2->payload);
+        printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));
+	
+    	int bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
+        printf("Bytes sent 1- %d\n",bytes_sent);
+
+	usleep(1000);
+	
+	/*bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
+        printf("Bytes sent 2- %d\n",bytes_sent);
+        usleep(1000);*/
+
+	bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);
+	if(bytes_received <= 0){
+        perror("[SocketThread] Receiving data over socket");
+        
+	}
+	else if(!strncmp(logmsg2->payload,"ACK",strlen("ACK")+1))
+	{
+		printf("received %s\n",logmsg2->payload);
+	}
+	usleep(1000);
+	bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
+		if(bytes_sent<= 0){
+        perror("[SocketThread] Sending data over socket");
+
+        }
+        usleep(1000);
+	
     while(1){
-      //bytes_received = recv(socket_fd,command,MAX_SEND_BUFFER,0);
       bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);
       if(bytes_received <= 0){
         perror("[SocketThread] Receiving data over socket");
         break;
       }else{
-        /* Send to Logger Task */
+        
+	
+	/*Send to Logger Task */
         //pthread_mutex_lock(&logQ_mutex);
+	//printf("received buffer over socket %s\n",command);
 
         /*if ((bytes_sent = mq_send (logger_queue_handle,(const char*)command, strlen(command), 1)) != 0) //can be changed later to light queue handle
   			{
   				perror ("[SocketThread] Sending:");
   			}
         */
-        /*printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
+        printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
         printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
         printf ("[SocketThread] Payload: %s \n\n", logmsg2->payload);
-        printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));*/
+        printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));
 
-        if(logmsg2->requestID == LOG_DATA){
+        /*if(logmsg2->requestID == LOG_DATA){
           if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
     			{
     				perror ("[SocketThread] Sending Log");
     			}
-        }
+        }*/
         //pthread_mutex_unlock(&logQ_mutex);
 
         /* Send to Decision Task */
         //pthread_mutex_lock(&decisionQ_mutex);
-        if(logmsg2->requestID == DECIDE){
+        /*if(logmsg2->requestID == DECIDE){
           sleep(0.5);
           if ((bytes_sent = mq_send (decision_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
     			{
     				perror ("[SocketThread] Sending Decision");
     			}
-        }
+        }*/
         //pthread_mutex_unlock(&decisionQ_mutex);
 
         //memset(command,(int)'\0',MAX_SEND_BUFFER);
         //memset(logmsg2,(int)'\0',sizeof(LogMsg));
+	usleep(1000);
       }
     }
   }
