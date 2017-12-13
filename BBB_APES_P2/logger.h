@@ -21,7 +21,7 @@
 #define ANSI_COLOR_CYAN    ("\x1b[36m")
 #define ANSI_COLOR_RESET   ("\x1b[0m")
 
-static char *taskNames[]={"MainThread","TempThread","PedometerThread","LoggerThread","DecisionThread"};
+static char *taskNames[]={"MainThread","TempThread","PedoThread","SocketThread","LoggerThread","DecisionThread"};
 
 typedef enum
 {
@@ -51,6 +51,7 @@ typedef enum{
   MAIN_TASK,
   TEMP_TASK,
   PEDO_TASK,
+  SOCKET_TASK,
   LOGGER_TASK,
   DECISION_TASK
 }Sources;

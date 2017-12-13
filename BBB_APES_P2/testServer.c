@@ -18,8 +18,7 @@
 #include <stdbool.h>
 
 #define BUFLEN 		256
-#define DEVICE_NAME	"/dev/SimpleCharDrv"
-#define DEF_PORT	"5005"
+#define DEF_PORT	"5000"
 #define QLEN 		32
 
 typedef enum
@@ -50,6 +49,7 @@ typedef enum{
   MAIN_TASK,
   TEMP_TASK,
   PEDO_TASK,
+  SOCKET_TASK,
   LOGGER_TASK,
   DECISION_TASK
 }Sources;
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 	int	socket_fd = 0;				/* master server socket	*/
 	int	client_socket_fd = 0; 		/* socket descriptor to get command from */
   LogMsg logmsg0;
-  socket_fd = userspace_sock("6001", QLEN);
+  socket_fd = userspace_sock(DEF_PORT, QLEN);
 
 	struct sockaddr_in client;
 	socklen_t client_addr_len;
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 				perror("Failed to read the message from the device.");
 				return errno;
 			}
-      sleep(1);
+      sleep(4);
       logmsg0.sourceId = TEMP_TASK;
       logmsg0.requestID = LOG_DATA;
       logmsg0.timestamp = time(NULL);
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 				perror("Failed to read the message from the device.");
 				return errno;
 			}
-      sleep(3);
+      sleep(1);
     }
   }
 }
