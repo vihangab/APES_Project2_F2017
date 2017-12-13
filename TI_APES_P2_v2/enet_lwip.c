@@ -26,11 +26,14 @@
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "task.h"
 #if LWIP_TCP
 
 static struct tcp_pcb *echo_pcb;
-extern LogMsg *logmsg;
-extern xSemaphoreHandle xTx_sem;
+//extern xSemaphoreHandle xTx_sem;
+extern xSemaphoreHandle xlogQ_mutex;
+extern QueueHandle_t xlogQ;
+LogMsg logmsg;
 
 
 //*****************************************************************************
@@ -320,22 +323,26 @@ echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
     UARTprintf("\r\n Accept Successful, %s payload size = %d\r\n",p->payload,p->tot_len);
     es->p = p;
     //echo_send(tpcb, es);
+
     /*dummy request */
-    //logmsg->sourceId= LOGGER_TASK;
-    //logmsg->requestID= LOG_DATA;
-    //logmsg->data = 25.0000;
-    //logmsg->level = INFO;
-    //strcpy(logmsg->payload,"ACK");
-    //logmsg->timestamp = time(NULL);
-    p->payload = logmsg;
-    UARTprintf("\r\n[TIVA] source ID: %d \n", logmsg->sourceId);
-    UARTprintf("\r\n[TIVA] Log Level: %d \n", logmsg->level);
-    UARTprintf("\r\n[TIVA] Payload: %s   \n", logmsg->payload);
-    UARTprintf("\r\n[TIVA] Timestamp: %s \n", ctime(&logmsg->timestamp));
+    logmsg.sourceId= LOGGER_TASK;
+    logmsg.requestID= LOG_DATA;
+    logmsg.data = 25.0000;
+    logmsg.level = INFO;
+    strcpy(logmsg.payload,"ACK");
+    logmsg.timestamp = time(NULL);
+    p->payload = (void *)&logmsg;
+    UARTprintf("\r\n[TIVA] source ID: %d \n", logmsg.sourceId);
+    UARTprintf("\r\n[TIVA] Log Level: %d \n", logmsg.level);
+    UARTprintf("\r\n[TIVA] Payload: %s   \n", logmsg.payload);
+    UARTprintf("\r\n[TIVA] Timestamp: %s \n", ctime(&logmsg.timestamp));
 
     //echo_send(tpcb, es);
-    tcp_write(tpcb, logmsg,sizeof(LogMsg),1);
-    tcp_output(tpcb);
+    tcp_write(tpcb, &logmsg,sizeof(LogMsg),1);
+    //memset(&logmsg,(int)'\0',sizeof(LogMsg));
+    //tcp_output(tpcb);
+
+
     /* install send completion notifier */
     ret_err = ERR_OK;
   }
@@ -357,26 +364,32 @@ echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
         }
         else
         {
-            /*dummy request */
-               //logmsg->sourceId= LOGGER_TASK;
-               //logmsg->requestID= LOG_DATA;
-               //logmsg->data = 25.0000;
-               //logmsg->level = INFO;
-               //strcpy(logmsg->payload,"ACK");
-               //logmsg->timestamp = time(NULL);
+            //for(;;){
+            while(uxQueueSpacesAvailable(xlogQ) != QLEN)
+             {
+                        if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
+                        {
+                                //UARTprintf("\r\n Logger task received data\r\n");
+                                if(xQueueReceive(xlogQ,&logmsg,portMAX_DELAY) != pdPASS)
+                                {
+                                  UARTprintf("\r\nQueue is empty task blocks for 10 ticks\r\n");
+                                }
+                                else
+                                {
+                                  UARTprintf("\r\nMsg ID = %d\r\n",logmsg.sourceId);
+                                  UARTprintf("\r\nTimestamp = %s\r\n",ctime(&logmsg.timestamp));
+                                  UARTprintf("\r\nLog Data = %s\r\n",logmsg.payload);
+                                  p->payload = (void *)&logmsg;
+                                 //echo_send(tpcb, es);
+                                 tcp_write(tpcb,&logmsg,sizeof(LogMsg),1);
+                                 tcp_output(tpcb);
 
-            //if(xSemaphoreTake(xTx_sem,20) == 1){
+                                }
+                        }
+                        xSemaphoreGive(xlogQ_mutex);
+                 }
+            //}
 
-               p->payload = logmsg;
-               UARTprintf("\r\n[TIVA] source ID: %d \n", logmsg->sourceId);
-               UARTprintf("\r\n[TIVA] Log Level: %d \n", logmsg->level);
-               UARTprintf("\r\n[TIVA] Payload: %s   \n", logmsg->payload);
-               UARTprintf("\r\n[TIVA] Timestamp: %s \n", ctime(&logmsg->timestamp));
-
-               //echo_send(tpcb, es);
-               tcp_write(tpcb, logmsg,sizeof(LogMsg),1);
-               tcp_output(tpcb);
-          //tcp_write(tpcb, logmsg,sizeof(LogMsg),1);
         }
         ret_err = ERR_OK;
   }
@@ -421,7 +434,7 @@ echo_poll(void *arg, struct tcp_pcb *tpcb)
       /* there is a remaining pbuf (chain)  */
       UARTprintf("\r\n data sending in poll %s ",(es->p)->payload);
 
-      tcp_write(tpcb, logmsg,sizeof(LogMsg),1);
+      //tcp_write(tpcb,&logmsg,sizeof(LogMsg),1);
       //tcp_output(tpcb);
       //echo_send(tpcb, es);
 
@@ -642,15 +655,17 @@ socketInit(void)
     LocatorMACAddrSet(pui8MACArray);
     LocatorAppTitleSet("EK-TM4C1294XL enet_io");
 
-    logmsg = (LogMsg *)mem_malloc(sizeof(LogMsg));
+    /*logmsg = (LogMsg *)mem_malloc(sizeof(LogMsg));
     if(logmsg == NULL)
     {
         UARTprintf("Malloc Failed\n");
         return 0;
     }
     else
-        memset(logmsg, (int)'\0',sizeof(LogMsg));
+        memset(logmsg, (int)'\0',sizeof(LogMsg));*/
 
+    //put a delay before socket bind
+    //vTaskDelay(1000);
     echo_init();
 
     //
@@ -686,6 +701,6 @@ socketInit(void)
         MAP_GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_1,
                          (MAP_GPIOPinRead(GPIO_PORTN_BASE, GPIO_PIN_1) ^
                           GPIO_PIN_1));
-     }
-    return 0;*/
+     }*/
+    return 0;
 }
