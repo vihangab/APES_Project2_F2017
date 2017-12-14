@@ -7,7 +7,7 @@ SSRCS= main.c gpio.c socketThread.c loggerThread.c logger.c initialise_queue.c d
 #headers=i2c_lib.h apds9301.h
 
 PROGRAMS=p2 test0 test1
-TEST0=testServer.c
+TEST0=mockServer.c
 TEST1=mockClient.c
 LOG_FILE=dataLog
 #Default make command builds executable file
