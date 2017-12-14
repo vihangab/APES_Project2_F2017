@@ -41,7 +41,7 @@ void *LoggerThread(void *args)
               log_item(logFile,logmsg1);
 							//printf ("[LoggerThread] Source ID: %d \n", logmsg1->sourceId);
 							//printf ("[LoggerThread] Log Level: %d \n", logmsg1->level);
-							//printf ("[LoggerThread] Payload: %s \n", logmsg1->payload);
+							printf ("[LoggerThread] Payload: %s \n", logmsg1->payload);
 							//printf ("[LoggerThread] Timestamp: %s \n", ctime(&logmsg1->timestamp));
 					  }else if(logmsg1->requestID == SYSTEM_SHUTDOWN){
               printf("%s\n","Closing logger");
