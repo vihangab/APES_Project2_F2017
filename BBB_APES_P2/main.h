@@ -20,6 +20,18 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <sys/errno.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include "gpio.h"
 #include "logger.h"
 
