@@ -1,0 +1,13 @@
+Steps to run the character driver (for successfully running)- 
+1. Unbind the existing led driver on Beaglebone green, do this as root - echo leds > /sys/class/leds/beaglebone\:green\:usr0/device/driver/unbind
+2. Refer to the Makefile uploaded(led_driver_makefile), do sudo make all, to compile the LKM for character driver
+3. insert the kernel module - insmod ./led_module.ko
+4. check the /var/log/syslog file for major number
+5. remove any existing char device named /dev/SimplecharDrv by sudo rm /dev/SimplecharDrv
+6. use major number in step 4, and run command sudo mknod -m 666 /dev/SimplecharDrv c <majornumber> 0
+7. Now the device has been created so we can begin file operations,
+8. run the user application main.c, which also acts as user space code that reads, writes, to the driver by 
+gcc user_main.c -o main.o
+
+
+
