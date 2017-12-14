@@ -17,15 +17,14 @@
 #undef CLIENT_LOGGER
 
 #define SERVER_IP   "127.0.0.1"//("10.0.0.137")
-#define SERVER_PORT (5000)
+#define SERVER_PORT       (5000)
 #define MAX_CONNECTIONS   (100)
 #define BACKLOG           (20)
-#define PORT_NUMBER       (6000)
 
 #ifdef SERVER_LOGGER
 
 #define BACKLOG           (20)
-#define PORT_NUMBER       (6000)
+#define PORT_NUMBER       (5000)
 
 /* Array of child threads and function descriptiors */
 pthread_t child_threads[MAX_CONNECTIONS];

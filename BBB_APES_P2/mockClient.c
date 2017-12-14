@@ -14,7 +14,7 @@
 
 /* CONSTANTS =============================================================== */
 #define SERVER_ADDR "localhost"
-const SERVER_PORT[5] = {8888,8889,8890,8891,8892};
+#define SERVER_PORT 5000
 #define BUFFER_SIZE 1024
 #define MESSAGE "ramblin wreck"
 uint32_t dataSet[]={1,35,1000,123,12};
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   LogMsg logmsg;
 
   logmsg.sourceId = val;
-  logmsg.requestID = val%3;
+  logmsg.requestID = 0;
   logmsg.data = dataSet[val];
   logmsg.level = val;
   logmsg.timestamp = time(NULL);

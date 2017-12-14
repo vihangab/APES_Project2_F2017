@@ -19,13 +19,13 @@ void sighandler_sigint(int signum)
   strcpy(logmsg1.payload,"Shutting down");
   logmsg1.data = 0;
   /* Send to all tasks queues*/
-  if ((bytes_sent = mq_send (decision_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
+  if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
   {
     perror ("[MainThread] Sending to Decision");
   }
   printf("%s\n","Send to all queues");
-  sleep(0.5);
-  if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
+  sleep(1);
+  if ((bytes_sent = mq_send (decision_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
   {
     perror ("[MainThread] Sending to Log");
   }
@@ -121,7 +121,7 @@ int main()
         }
         //pthread_mutex_unlock(&logQ_mutex);
       }else{
-        printf("%s\n","[MainThread] All tasks alive");
+      //  printf("%s\n","[MainThread] All tasks alive");
       }
   	}
   }
