@@ -39,13 +39,14 @@ void *respondClient(void * num);
 #endif
 
 void *SocketThread(void * input){
+  time_t timeVal;
   #ifdef CLIENT_LOGGER
   printf("%s\n","Client side logger");
   /* Variable for our socket fd*/
   uint32_t socket_fd;
   uint32_t bytes_sent;
   uint32_t bytes_received;
-  int i;
+  uint32_t i;
   struct sockaddr_in remoteAddr;
   //char command[80] = {(int)'\0'};
 
@@ -75,28 +76,33 @@ void *SocketThread(void * input){
     /* Receive data */
 
 	/*dummy request */
-	logmsg2->sourceId= LOGGER_TASK;
-	logmsg2->requestID= LOG_DATA;
-	logmsg2->data = 0.0000;
-	logmsg2->level = INFO;
+	memset(logmsg2,(int)'\0',sizeof(LogMsg));
+	logmsg2->sourceId= (uint8_t)LOGGER_TASK;
+	logmsg2->requestID=(uint8_t) LOG_DATA;
+	//logmsg2->data = 0.0000;
+        //logmsg2->c = (uint8_t)'\0';
+       // logmsg2->d = (uint8_t)'\0';
+	logmsg2->level = (uint8_t)INFO;
 	strcpy(logmsg2->payload,"init socket connection from BBG\n");
-	logmsg2->timestamp = time(NULL);
-
+        //timeVal = time(NULL);
+	//strcpy(logmsg2->timestamp,ctime(&timeVal));
+        
 	/*sending dummy data */
-	printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
-  printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
-  printf ("[SocketThread] Payload: %s \n", logmsg2->payload);
-  printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));
+	//printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
+  	//printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
+  	//printf ("[SocketThread] Payload: %s \n", logmsg2->payload);
+ 	//printf ("[SocketThread] Timestamp: %s \n", logmsg2->timestamp);
 
-  bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
-  printf("Bytes sent 1- %d\n",bytes_sent);
+  	bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
+  	//printf("Bytes sent 1- %d\n",bytes_sent);
 
 	usleep(1000);
 
 	/*bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
         printf("Bytes sent 2- %d\n",bytes_sent);
         usleep(1000);
-*/
+*/     // memset(logmsg2,(int)'\0',sizeof(LogMsg));
+	
 	bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);
 	if(bytes_received <= 0){
         perror("[SocketThread] Receiving data over socket");
@@ -106,13 +112,16 @@ void *SocketThread(void * input){
 	{
 		printf("received %s\n",logmsg2->payload);
 	}
-	usleep(1000);
+	//usleep(500);
+        
+
 	bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
 	if(bytes_sent<= 0){
   perror("[SocketThread] Sending data over socket");
 
   }
   usleep(1000);
+  
 
   while(1){
     bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);
@@ -136,10 +145,10 @@ void *SocketThread(void * input){
 				perror ("[SocketThread] Sending:");
 			}
       */
-      //printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
-    //  printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
+      printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
+      printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
       printf ("[SocketThread] Payload: %s \n", logmsg2->payload);
-      //printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));
+      //printf ("[SocketThread] Timestamp: %s \n", logmsg2->timestamp);
 
       if(logmsg2->requestID == LOG_DATA){
         if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle
@@ -291,7 +300,7 @@ void *SocketThread(void * input){
           //printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
         //  printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
           printf ("[SocketThread] Payload: %s \n", logmsg2->payload);
-          //printf ("[SocketThread] Timestamp: %s \n", ctime(&logmsg2->timestamp));
+          //printf ("[SocketThread] Timestamp: %s \n", logmsg2->timestamp);
 
           if(logmsg2->requestID == LOG_DATA){
             if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle

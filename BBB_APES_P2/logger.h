@@ -58,12 +58,14 @@ typedef enum{
 
 typedef struct logger
 {
-  Sources sourceId;
-  reqCmds requestID;
-  double data;
-  LogLevel level;
-	time_t timestamp;
-	char payload[100];
+  uint8_t sourceId;
+  uint8_t requestID;
+  uint8_t level;
+  float data;
+//  char timestamp[26];
+//  char c;
+  char payload[100];
+//  char d;
 }LogMsg;
 
 logger_state create_log_struct(LogMsg ** str);

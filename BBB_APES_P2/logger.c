@@ -61,8 +61,9 @@ logger_state log_item(FILE *fptr, LogMsg * logStruct){
 		default : strcpy(COLOR,ANSI_COLOR_RESET);
 		          break;
 	}
+        time_t timeVal = time(NULL);
   char stringToLog[300] = {(uint8_t)'\0'};
-	sprintf(stringToLog,"%s [%s] %s Message- %s %s\n", COLOR,taskNames[logStruct->sourceId],ctime(&logStruct->timestamp),logStruct->payload, ANSI_COLOR_RESET);
+	sprintf(stringToLog,"%s [%s] %s Message- %s %s\n", COLOR,taskNames[logStruct->sourceId],ctime(&timeVal),logStruct->payload, ANSI_COLOR_RESET);
 	printf("%s",stringToLog);
 	return log_string(fptr,stringToLog);
 }

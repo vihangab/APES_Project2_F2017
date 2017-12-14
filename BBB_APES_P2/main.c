@@ -6,17 +6,41 @@
 
 #include "main.h"
 
+extern FILE *logFile; 
+
+void write_to_driver()
+{
+	
+        
+  	/* Open the device with read/write access */
+  	fd = open(DEVICE_NAME,O_RDWR);
+  	if(fd < 0)
+  	{
+      		perror("Failed to open the device...");
+		
+ 	}
+	int ret = write(fd, &valtodriver, sizeof(valtodriver));
+	if(ret < 0)
+	{
+		perror("Failed to write the message to the device.");
+	}
+        close(fd);
+}
+//default send values
 void sighandler_sigint(int signum)
 {
-	printf("Caught signal sigint, coming out...\n");
+  printf("Caught signal sigint, coming out...\n");
   SIGINT_EVENT = 1;	//set flag for SIGINT event
-	LogMsg logmsg1;
+  LogMsg logmsg1;
   uint32_t bytes_sent;
+  time_t timeVal;
   logmsg1.sourceId = MAIN_TASK;
   logmsg1.level = ALERT;
   logmsg1.requestID = SYSTEM_SHUTDOWN;
-  logmsg1.timestamp = time(NULL);
+  //timeVal = time(NULL);
+  //strcpy(logmsg1.timestamp,ctime(&timeVal));
   strcpy(logmsg1.payload,"Shutting down");
+  fclose(logFile);
   logmsg1.data = 0;
   /* Send to all tasks queues*/
   if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
@@ -38,6 +62,7 @@ int main()
   int32_t alive;
   int32_t bytes_sent;
   char threadName[20];
+  time_t timeVal;
   /* Initialize a signal handler for SIGINT */
   signal(SIGINT, sighandler_sigint);
   SIGINT_EVENT = 0;
@@ -54,12 +79,19 @@ int main()
   initialize_queue(QLog,&logger_queue_handle);
   initialize_queue(QDecide,&decision_queue_handle);
   //initialize_queue(QMain,&main_queue_handle);
-
+  
+  /* init driver values */
+  //default send values
+  valtodriver.state = true; 
+  valtodriver.period = 5000;
+  valtodriver.duty = 50;
+  
   retval = pthread_create(&loggerThread,NULL,&LoggerThread,NULL);
 	if(retval != 0)
 	{
 		printf("Thread Creation failed, error code - %d\n", retval);
-		pinSet(led_path);
+		write_to_driver();
+		//pinSet(led_path);
 	}
   sleep(1);
 
@@ -67,7 +99,8 @@ int main()
 	if(retval != 0)
 	{
 		printf("Thread Creation failed, error code - %d\n", retval);
-		pinSet(led_path);
+		write_to_driver();
+		//pinSet(led_path);
 	}
   sleep(1);
 
@@ -75,7 +108,9 @@ int main()
   if(retval != 0)
   {
     printf("Thread Creation failed, error code - %d\n", retval);
-    pinSet(led_path);
+ 
+    //pinSet(led_path);
+    write_to_driver();
   }
 
   create_interval_timer(2);
@@ -94,25 +129,30 @@ int main()
       }
       if((alive = pthread_kill(socketThread, 0))==3) //Check with ERSCH flag
       {
+
         printf("%s\n","Socket Thread Dead");
         strcpy(threadName,taskNames[1]);
-        pinSet(led_path);
+        //pinSet(led_path);
+	write_to_driver();
       }else if((alive = pthread_kill(loggerThread, 0))==3)
       {
         printf("%s\n","Logger Thread Dead");
         strcpy(threadName,taskNames[2]);
-        pinSet(led_path);
+        write_to_driver();
+	//pinSet(led_path);
       }else if((alive = pthread_kill(decisionThread, 0))==3)
       {
         printf("%s\n","Decision Thread Dead");
         strcpy(threadName,taskNames[3]);
-        pinSet(led_path);
+        write_to_driver();
+	//pinSet(led_path);
       }
       if(alive == 3){
         logmsg0->sourceId = MAIN_TASK;
         logmsg0->level = ALERT;
         logmsg0->requestID = LOG_DATA;
-        logmsg0->timestamp = time(NULL);
+        //timeVal = time(NULL);
+        //strcpy(logmsg0->timestamp,ctime(&timeVal));
         sprintf(logmsg0->payload,"%s thread dead",threadName);
         //pthread_mutex_lock(&logQ_mutex);
         if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg0, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle

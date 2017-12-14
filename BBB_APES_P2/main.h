@@ -41,19 +41,19 @@
 #define QLog                   "/logq"
 #define QMain                  "/mainq"
 #define QDecide                "/decisionq"
-#define DEVICE_NAME	"/dev/SimpleCharDrv" 
-#define QLEN 		32
+#define DEVICE_NAME	       "/dev/SimpleCharDrv" 
+#define QLEN 		       32
 
-data_t valtodriver;
 int32_t fd; //file descripter for led device
 
-char stringToSend[BUFLEN] = {0};
 typedef struct data
 {
 	bool state;
 	long period;
 	long duty;
 }data_t;
+
+data_t valtodriver;
 
 sig_atomic_t SIGINT_EVENT;
 
