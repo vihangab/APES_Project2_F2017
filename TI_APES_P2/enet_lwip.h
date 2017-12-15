@@ -1,8 +1,7 @@
 /*
- * enet_lwip.h
- *
+ *  Filename:   enet_lwip.h
  *  Created on: Dec 11, 2017
- *      Author: Virag Gada, Vihanga Bare
+ *  Author:     Vihanga Bare, Virag Gada
  */
 
 #ifndef ENET_LWIP_H_
@@ -43,10 +42,11 @@ struct echo_state
   u8_t state;
   u8_t retries;
   struct tcp_pcb *pcb;
-  /* pbuf (chain) to recycle */
   struct pbuf *p;
 };
 
+
+// TCP function callbacks
 err_t echo_accept(void *arg, struct tcp_pcb *newpcb, err_t err);
 err_t echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err);
 void echo_error(void *arg, err_t err);
