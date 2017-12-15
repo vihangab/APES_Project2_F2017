@@ -17,7 +17,7 @@
 #define CLIENT_LOGGER
 
 
-#define SERVER_IP   "172.21.74.73"//("10.0.0.137")
+#define SERVER_IP   "128.138.189.132"//("10.0.0.137")
 #define SERVER_PORT (5000)
 #define MAX_CONNECTIONS   (100)
 #define BACKLOG           (20)
@@ -80,8 +80,6 @@ void *SocketThread(void * input){
 	logmsg2->sourceId= (uint8_t)LOGGER_TASK;
 	logmsg2->requestID=(uint8_t) LOG_DATA;
 	//logmsg2->data = 0.0000;
-        //logmsg2->c = (uint8_t)'\0';
-       // logmsg2->d = (uint8_t)'\0';
 	logmsg2->level = (uint8_t)INFO;
 	strcpy(logmsg2->payload,"init socket connection from BBG\n");
         //timeVal = time(NULL);
@@ -148,7 +146,7 @@ void *SocketThread(void * input){
       printf ("[SocketThread] source ID: %d \n", logmsg2->sourceId);
       printf ("[SocketThread] Log Level: %d \n", logmsg2->level);
       printf ("[SocketThread] Payload: %s \n", logmsg2->payload);
-      //printf ("[SocketThread] Timestamp: %s \n", logmsg2->timestamp);
+      printf ("[SocketThread] Timestamp: %s \n", logmsg2->timestamp);
 
       if(logmsg2->requestID == LOG_DATA){
         if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg2, sizeof(LogMsg), 1)) != 0) //can be changed later to light queue handle

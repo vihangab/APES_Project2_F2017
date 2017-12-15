@@ -46,6 +46,7 @@ void *LoggerThread(void *args)
 					  }else if(logmsg1->requestID == SYSTEM_SHUTDOWN){
               printf("%s\n","Closing logger");
               fclose(logFile);
+              mq_close(logger_queue_handle);
               break;
             }
 		//printf("command received = %s",command);
