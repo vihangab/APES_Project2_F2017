@@ -51,6 +51,7 @@ typedef enum{
   MAIN_TASK,
   TEMP_TASK,
   PEDO_TASK,
+  SOCKET_TASK,
   LOGGER_TASK,
   DECISION_TASK
 }Sources;
@@ -65,6 +66,7 @@ typedef struct logger
   char payload[100];
 }LogMsg;
 
-LogMsg *logmsg;
+#define MAXLEN 100
+#define QLEN 50
 
 #endif /* MAIN_H_ */

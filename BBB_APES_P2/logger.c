@@ -38,11 +38,11 @@ logger_state create_log_file(FILE **fptr, char *fileName){
 /* Function to log a log structure */
 logger_state log_item(FILE *fptr, LogMsg * logStruct){
 	if((fptr == NULL)){
-    //printf("%s\n","NULL PTR 1");
+    printf("%s\n","NULL PTR 1");
   	return NULL_PTR;
 	}
   if((logStruct == NULL)){
-    //printf("%s\n","NULL PTR 10");
+    printf("%s\n","NULL PTR 10");
   	return NULL_PTR;
 	}
 
@@ -61,9 +61,9 @@ logger_state log_item(FILE *fptr, LogMsg * logStruct){
 		default : strcpy(COLOR,ANSI_COLOR_RESET);
 		          break;
 	}
-  char stringToLog[200] = {(uint8_t)'\0'};
-	sprintf(stringToLog,"%s [%s] %s Message- %s %s\n",
-	  COLOR,taskNames[logStruct->sourceId],ctime(&logStruct->timestamp),logStruct->payload, ANSI_COLOR_RESET);
+        time_t timeVal = time(NULL);
+  char stringToLog[300] = {(uint8_t)'\0'};
+	sprintf(stringToLog,"%s [%s] %s Message- %s %s\n", COLOR,taskNames[logStruct->sourceId],ctime(&timeVal),logStruct->payload, ANSI_COLOR_RESET);
 	printf("%s",stringToLog);
 	return log_string(fptr,stringToLog);
 }

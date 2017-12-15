@@ -26,9 +26,6 @@
 #include <tmp102.h>
 #include <lsm6ds3.h>
 
-#define MAXLEN 100
-#define QLEN 10
-
 //Queue
 QueueHandle_t xlogQ;
 
@@ -103,6 +100,7 @@ int main(void)
   //create binary semaphore for signaling
   vSemaphoreCreateBinary(temp_task);
   vSemaphoreCreateBinary(pedo_task);
+
   //create a mutex for logQ
   xlogQ_mutex = xSemaphoreCreateMutex();
 
@@ -111,23 +109,22 @@ int main(void)
 
   xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, NULL);
 
-  xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
+  //xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
 
   xTaskCreate(socketTask, (const portCHAR *)"Socket",1024, NULL, 1, NULL);
 
   UARTprintf("\r\ntemp pedo logger tasks created\r\n");
 
   UARTprintf("exit main\n");
-
-  //vTaskDelay(5000);
   vTaskStartScheduler();
-
   return 0;
 }
 
 
-void socketTask(void *pvParameters){
-  socketInit();
+void socketTask(void *pvParameters)
+{
+  //socketInit();
+
   while(1);
 }
 
@@ -154,6 +151,11 @@ void temperatureTask(void *pvParameters)
               temp_msg.level = INFO;
               sprintf(temp_msg.payload,"Temperature value is - %f",temp);
               temp_msg.timestamp = time(NULL);
+
+              UARTprintf("\r\n[Temp] source ID: %d \n", temp_msg.sourceId);
+              UARTprintf("\r\n[Temp] Log Level: %d \n", temp_msg.level);
+              UARTprintf("\r\n[Temp] Payload: %s   \n", temp_msg.payload);
+              UARTprintf("\r\n[Temp] Timestamp: %s \n", ctime(&temp_msg.timestamp));
               if(xQueueSendToBack(xlogQ,&temp_msg,10) != pdPASS )
               {
                   UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
@@ -162,8 +164,9 @@ void temperatureTask(void *pvParameters)
            }
            xSemaphoreGive(xlogQ_mutex);
            memset(&temp_msg,(int)'\0',sizeof(LogMsg));
+           //vTaskDelay(2000);
        }
-       //vTaskDelay(2000);
+
     }
 
 }
@@ -198,8 +201,10 @@ void pedometerTask(void *pvParameters)
                        UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
                    }
                    //UARTprintf("\r\nPedo task completed\r\n");
+
               }
               xSemaphoreGive(xlogQ_mutex);
+              //vTaskDelay(2000);
               memset(&pedo_msg,(int)'\0',sizeof(LogMsg));
           }
 
@@ -211,8 +216,8 @@ void pedometerTask(void *pvParameters)
 // Task to receive foot step count from the sensor
 void loggerTask(void *pvParameters)
 {
-    LogMsg log_msg;
-    for(;;)
+    //LogMsg log_msg;
+    /*for(;;)
     {
        while(uxQueueSpacesAvailable(xlogQ) != QLEN )
        {
@@ -244,7 +249,7 @@ void loggerTask(void *pvParameters)
 
           //vTaskDelay(2000);
        }
-    }
+    }*/
 }
 
 
