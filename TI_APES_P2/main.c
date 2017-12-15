@@ -26,6 +26,7 @@
 #include <tmp102.h>
 #include <lsm6ds3.h>
 
+
 //Queue
 QueueHandle_t xlogQ;
 
@@ -37,13 +38,25 @@ xSemaphoreHandle temp_task = 0;
 xSemaphoreHandle pedo_task = 0;
 xSemaphoreHandle xlogQ_mutex = 0;
 
+//Heartbeat semaphores
+xSemaphoreHandle temp_hb = 0;
+xSemaphoreHandle pedo_hb = 0;
+xSemaphoreHandle socket_hb = 0;
 
+
+//task handles
+xTaskHandle xtempTaskHandle;
+xTaskHandle xpedoTaskHandle;
+xTaskHandle xloggerTaskHandle;
+xTaskHandle xsocketTaskHandle;
+xTaskHandle xheartbeatTaskHandle;
 
 // Demo Task declarations
 void temperatureTask(void *pvParameters);
 void pedometerTask(void *pvParameters);
 void loggerTask(void *pvParameters);
 void socketTask(void *pvParameters);
+void heartbeatTask(void *pvParameters);
 void vTimerCallBack(void *);
 
 void vTimerCallBack(void* a)
@@ -51,8 +64,6 @@ void vTimerCallBack(void* a)
     xSemaphoreGive(temp_task);
     xSemaphoreGive(pedo_task);
 }
-
-
 
 // Main function
 int main(void)
@@ -100,18 +111,22 @@ int main(void)
   //create binary semaphore for signaling
   vSemaphoreCreateBinary(temp_task);
   vSemaphoreCreateBinary(pedo_task);
+  vSemaphoreCreateBinary(pedo_hb);
+  vSemaphoreCreateBinary(temp_hb);
 
   //create a mutex for logQ
   xlogQ_mutex = xSemaphoreCreateMutex();
 
   // Create tasks
-  xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",1024, NULL, 1, NULL);
+  xTaskCreate(temperatureTask, (const portCHAR *)"Temperature",1024, NULL, 1, xtempTaskHandle);
 
-  xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, NULL);
+  xTaskCreate(pedometerTask, (const portCHAR *)"Pedometer",1024, NULL, 1, xpedoTaskHandle);
 
   //xTaskCreate(loggerTask, (const portCHAR *)"Logger",1024, NULL, 1, NULL);
 
-  xTaskCreate(socketTask, (const portCHAR *)"Socket",1024, NULL, 1, NULL);
+  xTaskCreate(socketTask, (const portCHAR *)"Socket",1024, NULL, 1, xsocketTaskHandle);
+
+  xTaskCreate(heartbeatTask, (const portCHAR *)"HeartBeat",1024, NULL, 1, xheartbeatTaskHandle);
 
   UARTprintf("\r\ntemp pedo logger tasks created\r\n");
 
@@ -123,7 +138,7 @@ int main(void)
 
 void socketTask(void *pvParameters)
 {
-  //socketInit();
+  socketInit();
 
   while(1);
 }
@@ -134,28 +149,31 @@ void temperatureTask(void *pvParameters)
 {
     setupTMP102();
     double temp;
+    uint32_t timeVal;
     LogMsg temp_msg;
     for(;;)
     {
        //wait for a signal
        if(xSemaphoreTake(temp_task,portMAX_DELAY) == pdTRUE)
        {
+           xSemaphoreGive(temp_hb);
 
            if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
            {
               //UARTprintf("\r\nTemp Task received signal\r\n");
               readTMP102(&temp);
+              memset(&temp_msg,(int)'\0',sizeof(LogMsg));
               temp_msg.sourceId = TEMP_TASK;
               temp_msg.requestID = LOG_DATA;
               temp_msg.data = temp;
               temp_msg.level = INFO;
               sprintf(temp_msg.payload,"Temperature value is - %f",temp);
-              temp_msg.timestamp = time(NULL);
-
-              UARTprintf("\r\n[Temp] source ID: %d \n", temp_msg.sourceId);
-              UARTprintf("\r\n[Temp] Log Level: %d \n", temp_msg.level);
-              UARTprintf("\r\n[Temp] Payload: %s   \n", temp_msg.payload);
-              UARTprintf("\r\n[Temp] Timestamp: %s \n", ctime(&temp_msg.timestamp));
+              timeVal = time(NULL);
+              strcpy(temp_msg.timestamp,ctime(&timeVal));
+              UARTprintf("\r\n[Temp] source ID: %d\r\n", temp_msg.sourceId);
+              UARTprintf("\r\n[Temp] Log Level: %d\r\n", temp_msg.level);
+              UARTprintf("\r\n[Temp] Payload: %s  \r\n", temp_msg.payload);
+              UARTprintf("\r\n[Temp] Timestamp: %s   %d\r\n", temp_msg.timestamp,sizeof(LogMsg));
               if(xQueueSendToBack(xlogQ,&temp_msg,10) != pdPASS )
               {
                   UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
@@ -176,13 +194,14 @@ void temperatureTask(void *pvParameters)
 void pedometerTask(void *pvParameters)
 {
     uint16_t steps;
+    time_t timeVal;
     LogMsg pedo_msg;
     setupLSM6DS3();
     //UARTprintf("Step count - %d\n",steps);
     for(;;)
     {
         //wait for a signal
-
+        xSemaphoreGive(pedo_hb);
          if(xSemaphoreTake(pedo_task,portMAX_DELAY) == pdTRUE)
           {
 
@@ -195,7 +214,8 @@ void pedometerTask(void *pvParameters)
                    pedo_msg.data = steps;
                    pedo_msg.level = INFO;
                    sprintf(pedo_msg.payload,"Step count - %d",steps);
-                   pedo_msg.timestamp = time(NULL);
+                   timeVal = time(NULL);
+                   strcpy(pedo_msg.timestamp,ctime(&timeVal));
                    if(xQueueSendToBack(xlogQ,&pedo_msg,10) != pdPASS )
                    {
                        UARTprintf("\r\nQueue is full task blocks for 10 ticks\r\n");
@@ -204,11 +224,7 @@ void pedometerTask(void *pvParameters)
 
               }
               xSemaphoreGive(xlogQ_mutex);
-              //vTaskDelay(2000);
-              memset(&pedo_msg,(int)'\0',sizeof(LogMsg));
           }
-
-       //vTaskDelay(2000);
     }
 
 }
@@ -216,6 +232,7 @@ void pedometerTask(void *pvParameters)
 // Task to receive foot step count from the sensor
 void loggerTask(void *pvParameters)
 {
+    //time_t timeVal;
     //LogMsg log_msg;
     /*for(;;)
     {
@@ -239,10 +256,8 @@ void loggerTask(void *pvParameters)
                       logmsg->data = log_msg.data;
                       logmsg->level = log_msg.level;
                       sprintf(logmsg->payload,"Step count - %d",log_msg.payload);
-                      logmsg->timestamp = time(NULL);
-
-
-
+                      timeVal = time(NULL);
+                      strcpy(logmsg->timestamp,&timeVal);
                     }
             }
             xSemaphoreGive(xlogQ_mutex);
@@ -251,6 +266,96 @@ void loggerTask(void *pvParameters)
        }
     }*/
 }
+
+void heartbeatTask(void *pvParameters)
+{
+    exitflag = 0;
+    LogMsg hb_msg;
+    time_t timeVal;
+    for(;;)
+    {
+       //wait for a signal
+
+       if(xSemaphoreTake(temp_hb,5000) == pdTRUE)
+       {
+           UARTprintf("\r\nHeartbeat Received from temp task\r\n");
+       }
+       else
+       {
+           if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
+           {
+               UARTprintf("\r\nHeartbeat not Received from Temp task\r\n");
+               vTaskDelay(100);
+               hb_msg.sourceId = MAIN_TASK;
+               hb_msg.requestID = SYSTEM_SHUTDOWN;
+               hb_msg.data = 99.9999;
+               hb_msg.level = ALERT;
+               sprintf(hb_msg.payload,"Heartbeat not received from Temp Task");
+               timeVal = time(NULL);
+               strcpy(hb_msg.timestamp,ctime(&timeVal));
+               if(xQueueSendToBack(xlogQ,&hb_msg,10) != pdPASS )
+               {
+                   UARTprintf("\r\nQueue is full task blocks for port max delay\r\n");
+               }
+               exitflag = 0x01;
+           }
+           xSemaphoreGive(xlogQ_mutex);
+       }
+       if(xSemaphoreTake(pedo_hb,5000) == pdTRUE)
+       {
+          if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
+          {
+
+              UARTprintf("\r\nHeartbeat not Received from Pedo task\r\n");
+              vTaskDelay(100);
+              hb_msg.sourceId = MAIN_TASK;
+              hb_msg.requestID = SYSTEM_SHUTDOWN;
+              hb_msg.data = 99.9999;
+              hb_msg.level = ALERT;
+              sprintf(hb_msg.payload,"Heartbeat not received from Pedo Task");
+              timeVal = time(NULL);
+              strcpy(hb_msg.timestamp,ctime(&timeVal));
+              if(xQueueSendToBack(xlogQ,&hb_msg,10) != pdPASS )
+              {
+                  UARTprintf("\r\nQueue is full task blocks for port max delay\r\n");
+              }
+              exitflag = 0x01;
+          }
+          xSemaphoreGive(xlogQ_mutex);
+       }
+       else
+       {
+          UARTprintf("\r\nHeartbeat not Received from pedo task\r\n");
+          exitflag = 0x02;
+       }
+      if(exitflag != 0)
+      {
+          vTaskDelete(xtempTaskHandle);
+          vTaskDelay(100);
+          if(eTaskGetState(xtempTaskHandle) == eDeleted)
+          {
+              UARTprintf("\r\nTemp Task Killed\r\n");
+          }
+
+          vTaskDelete(xpedoTaskHandle);
+          vTaskDelay(100);
+          if(eTaskGetState(xpedoTaskHandle) == eDeleted)
+          {
+                UARTprintf("\r\nPedometer Task Killed\r\n");
+          }
+
+          vTaskDelete(xsocketTaskHandle);
+          vTaskDelay(100);
+          if(eTaskGetState(xsocketTaskHandle) == eDeleted)
+          {
+              UARTprintf("\r\nSocket Task Killed\r\n");
+          }
+          break;
+      }
+    }
+}
+
+
 
 
 /*  ASSERT() Error function

@@ -11,4 +11,5 @@
 	<createSlaveProjects value=""/>
 	<templateProperties value="id=com.ti.common.project.core.emptyProjectWithMainTemplate,"/>
 	<isTargetManual value="false"/>
+	<origin value="C:/Users/Virag Gada/Downloads/APES_Project2_F2017-master/TI_APES_P2_v2"/>
 </projectOptions>

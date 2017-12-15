@@ -285,7 +285,7 @@ echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
 {
   struct echo_state *es;
   err_t ret_err;
-
+  time_t timeVal;
 
   es = (struct echo_state *)arg;
   if (p == NULL)
@@ -323,19 +323,20 @@ echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
     UARTprintf("\r\n Accept Successful, %s payload size = %d\r\n",p->payload,p->tot_len);
     es->p = p;
     //echo_send(tpcb, es);
-
+    memset(&logmsg,(int)'\0',sizeof(LogMsg));
     /*dummy request */
     logmsg.sourceId= LOGGER_TASK;
     logmsg.requestID= LOG_DATA;
     logmsg.data = 25.0000;
     logmsg.level = INFO;
     strcpy(logmsg.payload,"ACK");
-    logmsg.timestamp = time(NULL);
+    timeVal = time(NULL);
+    strcpy(logmsg.timestamp,ctime(&timeVal));
     p->payload = (void *)&logmsg;
     UARTprintf("\r\n[TIVA] source ID: %d \n", logmsg.sourceId);
     UARTprintf("\r\n[TIVA] Log Level: %d \n", logmsg.level);
     UARTprintf("\r\n[TIVA] Payload: %s   \n", logmsg.payload);
-    UARTprintf("\r\n[TIVA] Timestamp: %s \n", ctime(&logmsg.timestamp));
+    UARTprintf("\r\n[TIVA] Timestamp: %s \n", logmsg.timestamp);
 
     //echo_send(tpcb, es);
     tcp_write(tpcb, &logmsg,sizeof(LogMsg),1);
@@ -377,7 +378,7 @@ echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
                                 else
                                 {
                                   UARTprintf("\r\nMsg ID = %d\r\n",logmsg.sourceId);
-                                  UARTprintf("\r\nTimestamp = %s\r\n",ctime(&logmsg.timestamp));
+                                  UARTprintf("\r\nTimestamp = %s\r\n",logmsg.timestamp);
                                   UARTprintf("\r\nLog Data = %s\r\n",logmsg.payload);
                                   p->payload = (void *)&logmsg;
                                  //echo_send(tpcb, es);

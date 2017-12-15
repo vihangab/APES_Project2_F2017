@@ -25,6 +25,10 @@
 
 #include "enet_lwip.h"
 
+
+/* Macro to enable and disable unit testing */
+//#define UNIT_TEST
+
 //uint32_t system_clock_rate_hz;
 uint32_t g_ui32SysClock;
 
@@ -58,15 +62,18 @@ typedef enum{
 
 typedef struct logger
 {
-  Sources sourceId;
-  reqCmds requestID;
-  double data;
-  LogLevel level;
-  time_t timestamp;
+
+  uint8_t sourceId;
+  uint8_t requestID;
+  uint8_t level;
+  float data;
+  char timestamp[32];
   char payload[100];
 }LogMsg;
 
 #define MAXLEN 100
-#define QLEN 50
+#define QLEN   50
+
+int exitflag;
 
 #endif /* MAIN_H_ */

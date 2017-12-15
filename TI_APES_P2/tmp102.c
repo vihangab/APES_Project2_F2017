@@ -8,6 +8,7 @@
 #include <tmp102.h>
 #include "main.h"
 
+/* Function to setup I2C0 and registers for TMP102 */
 void setupTMP102(){
 
     // Enable GPIOB peripheral
@@ -37,6 +38,7 @@ void setupTMP102(){
     UARTprintf("Temp sensor setup done\n");
 }
 
+/* Read temperature values from TMP102 sensor */
 void readTMP102(double *digitalTemp){
 
     uint8_t reg_value[2];
@@ -89,5 +91,4 @@ void readTMP102(double *digitalTemp){
     //UARTprintf("integer value - %d\n",intTemp);
 
     *digitalTemp = 0.0625*intTemp;
-
 }
