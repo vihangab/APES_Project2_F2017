@@ -186,7 +186,7 @@ void temperatureTask(void *pvParameters)
               strcpy(temp_msg.timestamp,ctime(&timeVal));
 
               //Debug prints to check log struct data, commented out
-#ifndef
+#ifndef DEBUG
               UARTprintf("\r\n[Temp] source ID: %d\r\n", temp_msg.sourceId);
               UARTprintf("\r\n[Temp] Log Level: %d\r\n", temp_msg.level);
               UARTprintf("\r\n[Temp] Payload: %s  \r\n", temp_msg.payload);
@@ -240,7 +240,7 @@ void pedometerTask(void *pvParameters)
                    sprintf(pedo_msg.payload,"Step count - %d",steps);
                    timeVal = time(NULL);
                    strcpy(pedo_msg.timestamp,ctime(&timeVal));
-#ifndef
+#ifndef DEBUG
               UARTprintf("\r\n[Pedometer] source ID: %d\r\n", pedo_msg.sourceId);
               UARTprintf("\r\n[Pedometer] Log Level: %d\r\n", pedo_msg.level);
               UARTprintf("\r\n[Pedometer] Payload: %s  \r\n", pedo_msg.payload);
