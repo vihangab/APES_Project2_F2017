@@ -17,7 +17,7 @@
 #define CLIENT_LOGGER
 
 
-#define SERVER_IP   "128.138.189.132"//("10.0.0.137")
+#define SERVER_IP "172.21.74.73" //"127.0.0.1"//"172.21.74.73"//("10.0.0.137")
 #define SERVER_PORT (5000)
 #define MAX_CONNECTIONS   (100)
 #define BACKLOG           (20)
@@ -118,8 +118,15 @@ void *SocketThread(void * input){
   perror("[SocketThread] Sending data over socket");
 
   }
-  usleep(1000);
   
+  usleep(500);  
+  
+  bytes_sent = write(socket_fd,logmsg2,sizeof(LogMsg));
+        if(bytes_sent<= 0){
+  perror("[SocketThread] Sending data over socket");
+
+  }
+
 
   while(1){
     bytes_received = recv(socket_fd,logmsg2,sizeof(LogMsg),0);

@@ -30,10 +30,10 @@ typedef enum
 
 typedef enum loglevel
 {
-	INFO,
-	WARNING,
-	ALERT,
-	HEART_BEAT,
+  INFO,
+  WARNING,
+  ALERT,
+  HEART_BEAT,
   INITIALIZATION
 }LogLevel;
 
@@ -55,12 +55,12 @@ typedef enum{
 
 typedef struct logger
 {
-  Sources sourceId;
-  reqCmds requestID;
-  double data;
-  LogLevel level;
-	time_t timestamp;
-	char payload[100];
+  uint8_t sourceId;
+  uint8_t requestID;
+  uint8_t level;
+  float data;
+  char timestamp[32];
+  char payload[100];
 }LogMsg;
 
 int main(int argc, char **argv) {
@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
   struct sockaddr_in server_socket_addr;
   char buffer[BUFFER_SIZE];
 
+  time_t timeVal;
   if(argc != 2){
     printf("%s\n","Usage ./mockclient <number>");
     exit(1);
@@ -106,7 +107,9 @@ int main(int argc, char **argv) {
   logmsg.requestID = 0;
   logmsg.data = dataSet[val];
   logmsg.level = val;
-  logmsg.timestamp = time(NULL);
+  timeVal = time(NULL);
+  strcpy(logmsg.timestamp,ctime(&timeVal));
+
   strcpy(logmsg.payload,payloads[val]);
   // Send echo message
   if (0 > send(socket_fd, &logmsg, sizeof(LogMsg), 0)) {

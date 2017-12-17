@@ -31,10 +31,10 @@ typedef enum
 
 typedef enum loglevel
 {
-	INFO,
-	WARNING,
-	ALERT,
-	HEART_BEAT,
+  INFO,
+  WARNING,
+  ALERT,
+  HEART_BEAT,
   INITIALIZATION
 }LogLevel;
 
@@ -56,12 +56,12 @@ typedef enum{
 
 typedef struct logger
 {
-  Sources sourceId;
-  reqCmds requestID;
-  double data;
-  LogLevel level;
-	time_t timestamp;
-	char payload[100];
+  uint8_t sourceId;
+  uint8_t requestID;
+  uint8_t level;
+  float data;
+  char timestamp[32];
+  char payload[100];
 }LogMsg;
 
 int userspace_sock(const char *portnum, int qlen)
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	int	client_socket_fd = 0; 		/* socket descriptor to get command from */
   LogMsg logmsg0;
   socket_fd = userspace_sock(DEF_PORT, QLEN);
-
+  time_t timeVal;
 	struct sockaddr_in client;
 	socklen_t client_addr_len;
 
@@ -141,31 +141,33 @@ int main(int argc, char **argv)
       int ret;
       logmsg0.sourceId = TEMP_TASK;
       logmsg0.requestID = DECIDE;
-      logmsg0.timestamp = time(NULL);
+      timeVal = time(NULL);
+      strcpy(logmsg0.timestamp,ctime(&timeVal));
       logmsg0.level = INFO;
       logmsg0.data = 29.65;
       sprintf(logmsg0.payload,"Temp value is - %f",logmsg0.data);
       ret = write(client_socket_fd,&logmsg0,sizeof(LogMsg));
       printf("Bytes sent - %d\n",ret);
-			if(ret < 0)
-			{
-				perror("Failed to read the message from the device.");
-				return errno;
-			}
+      if(ret < 0)
+      {
+	perror("Failed to read the message from the device.");
+	return errno;
+      }
       sleep(4);
       logmsg0.sourceId = TEMP_TASK;
       logmsg0.requestID = LOG_DATA;
-      logmsg0.timestamp = time(NULL);
+      timeVal = time(NULL);
+      strcpy(logmsg0.timestamp,ctime(&timeVal));
       logmsg0.level = WARNING;
       logmsg0.data = 29.65;
       sprintf(logmsg0.payload,"Temp value is - %f",logmsg0.data);
       ret = write(client_socket_fd,&logmsg0,sizeof(LogMsg));
       printf("Bytes sent - %d\n",ret);
-			if(ret < 0)
-			{
-				perror("Failed to read the message from the device.");
-				return errno;
-			}
+      if(ret < 0)  
+      {
+	perror("Failed to read the message from the device.");
+	return errno;
+      }
       sleep(1);
     }
   }

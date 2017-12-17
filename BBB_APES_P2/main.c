@@ -31,7 +31,7 @@ void write_to_driver()
 void sighandler_sigint(int signum)
 {
   printf("Caught signal sigint, coming out...\n");
-  SIGINT_EVENT = 1;	//set flag for SIGINT event
+  SIGINT_EVENT += 1;	//set flag for SIGINT event
   LogMsg logmsg1;
   uint32_t bytes_sent;
   time_t timeVal;
@@ -41,7 +41,8 @@ void sighandler_sigint(int signum)
   timeVal = time(NULL);
   strcpy(logmsg1.timestamp,ctime(&timeVal));
   strcpy(logmsg1.payload,"Shutting down");
-  fclose(logFile);
+  if(SIGINT_EVENT == 1)
+	fclose(logFile);
   logmsg1.data = 0;
   /* Send to all tasks queues*/
   if ((bytes_sent = mq_send (logger_queue_handle,(const char*)&logmsg1, sizeof(LogMsg), 2)) != 0) //can be changed later to light queue handle
