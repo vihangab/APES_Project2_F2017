@@ -72,7 +72,7 @@ typedef struct logger
 }LogMsg;
 
 #define MAXLEN 100
-#define QLEN   50
+#define QLEN   100
 
 int exitflag;
 

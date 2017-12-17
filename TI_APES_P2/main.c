@@ -86,6 +86,7 @@ int main(void)
 
   //create your queue
   xlogQ = xQueueCreate(QLEN,sizeof(LogMsg));
+  UARTprintf("\r\nLogQ creation failed\r\n");
   if(xlogQ == NULL)
   {
     UARTprintf("\r\nLogQ creation failed\r\n");
@@ -129,6 +130,7 @@ int main(void)
   xTaskCreate(socketTask, (const portCHAR *)"Socket",1024, NULL, 1, xsocketTaskHandle);
 
   xTaskCreate(heartbeatTask, (const portCHAR *)"HeartBeat",1024, NULL, 1, xheartbeatTaskHandle);
+
 
   UARTprintf("\r\ntemp pedo logger tasks created\r\n");
 
@@ -199,7 +201,12 @@ void temperatureTask(void *pvParameters)
               {
                   UARTprintf("\r\nQueue is full waiting for 10 ticks \r\n");
               }
-
+              vTaskDelay(100);
+              temp_msg.requestID = DECIDE;
+              if(xQueueSendToBack(xlogQ,&temp_msg,10) != pdPASS )
+              {
+                  UARTprintf("\r\nQueue is full waiting for 10 ticks \r\n");
+              }
            }
            xSemaphoreGive(xlogQ_mutex);
        }
@@ -225,9 +232,9 @@ void pedometerTask(void *pvParameters)
     for(;;)
     {
         //wait for a signal
-        xSemaphoreGive(pedo_hb);
          if(xSemaphoreTake(pedo_task,portMAX_DELAY) == pdTRUE)
           {
+             xSemaphoreGive(pedo_hb);
 
               if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
               {
@@ -337,7 +344,12 @@ void heartbeatTask(void *pvParameters)
            vTaskDelay(100);
            exitflag = 0x01;
        }
+
        if(xSemaphoreTake(pedo_hb,5000) == pdTRUE)
+       {
+           UARTprintf("\r\nHeartbeat Received from Pedo task\r\n");
+       }
+       else
        {
           if(xSemaphoreTake(xlogQ_mutex,portMAX_DELAY) == pdTRUE)
           {
@@ -345,7 +357,7 @@ void heartbeatTask(void *pvParameters)
               UARTprintf("\r\nHeartbeat not Received from Pedometer task\r\n");
 
               //creating a log payload to send over the socket to Beaglebone to shut down beaglebone system as well
-              vTaskDelay(100);
+
               hb_msg.sourceId = MAIN_TASK;
               hb_msg.requestID = SYSTEM_SHUTDOWN;
               hb_msg.data = 99.9999;
@@ -357,13 +369,9 @@ void heartbeatTask(void *pvParameters)
               {
                   UARTprintf("\r\nQueue is full task blocks for port max delay\r\n");
               }
-              exitflag = 0x01;
           }
           xSemaphoreGive(xlogQ_mutex);
-       }
-       else
-       {
-          UARTprintf("\r\nHeartbeat not Received from pedo task\r\n");
+          vTaskDelay(100);
           exitflag = 0x02;
        }
       if(exitflag != 0)

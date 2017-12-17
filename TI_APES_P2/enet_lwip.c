@@ -260,7 +260,7 @@ err_t echo_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
                                 }
                         }
                         xSemaphoreGive(xlogQ_mutex);
-                 }
+              }
         }
         ret_err = ERR_OK;
   }
@@ -301,7 +301,7 @@ err_t echo_poll(void *arg, struct tcp_pcb *tpcb)
   {
     if (es->p != NULL)
     {
-        UARTprintf("\r\n check if socket has more data %s ");
+        //UARTprintf("\r\n check if socket has more data %s \r\n");
     }
     ret_err = ERR_OK;
   }
