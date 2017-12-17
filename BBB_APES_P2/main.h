@@ -37,7 +37,7 @@
 
 /*Macro definitions */
 #define MAX_SEND_BUFFER        (1024)
-#define TEMPERATURE_THRESHOLD  (28)
+#define TEMPERATURE_THRESHOLD  (25)
 #define QLog                   "/logq"
 #define QMain                  "/mainq"
 #define QDecide                "/decisionq"
